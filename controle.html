@@ -108,41 +108,51 @@
         let accumulatedGain = parseFloat(localStorage.getItem("accumulatedGain")) || 0;
         let monthlyValue = parseFloat(localStorage.getItem("monthlyValue")) || 0;
 
+        function accumulateGain() {
+            const gainPerMinute = 3500 / (30 * 24 * 60);
+            updateGain(gainPerMinute);
+        }
+
         function updateGain(value) {
             accumulatedGain += value;
             localStorage.setItem("accumulatedGain", accumulatedGain);
             const gainCounter = document.getElementById("gainCounter");
             gainCounter.innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
             gainCounter.classList.toggle("negative", accumulatedGain < 0);
-            updateMonthlyValue();
-        }
-
-        function accumulateGain() {
-            const gainPerMinute = 3500 / (30 * 24 * 60);
-            updateGain(gainPerMinute);
         }
 
         function subtractValue() {
-            const value = parseFloat(document.getElementById("subtractBox").value) || 0;
-            updateGain(-value);
-            document.getElementById("subtractBox").value = "";
-        }
+    const value = parseFloat(document.getElementById("subtractBox").value) || 0;
+    accumulatedGain -= value;
+    monthlyValue -= value;
+    localStorage.setItem("accumulatedGain", accumulatedGain);
+    localStorage.setItem("monthlyValue", monthlyValue);
+    document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+    document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
+    document.getElementById("subtractBox").value = "";
+}
 
         function addValue() {
-            const value = parseFloat(document.getElementById("addBox").value) || 0;
-            updateGain(value);
-            document.getElementById("addBox").value = "";
-        }
+    const value = parseFloat(document.getElementById("addBox").value) || 0;
+    accumulatedGain += value;
+    monthlyValue += value;
+    localStorage.setItem("accumulatedGain", accumulatedGain);
+    localStorage.setItem("monthlyValue", monthlyValue);
+    document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+    document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
+    document.getElementById("addBox").value = "";
+}
 
         function resetGain() {
             accumulatedGain = 0;
             localStorage.setItem("accumulatedGain", accumulatedGain);
             updateGain(0);
+            updateMonthlyValue();
         }
 
         function updateMonthlyValue() {
             const inputValue = parseFloat(document.getElementById("monthlyInput").value) || 0;
-            monthlyValue = inputValue - accumulatedGain;
+            monthlyValue = inputValue;
             localStorage.setItem("monthlyValue", monthlyValue);
             document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
         }
