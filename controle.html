@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!---beta2 --->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Renda</title>
@@ -13,25 +12,25 @@
             background-color: #f4f4f4;
         }
         h1 {
-            font-size: 2.5em;
+            font-size: 2em;
             margin-bottom: 20px;
             color: #4CAF50;
         }
         #timer, #gainCounter, #monthlyValue {
-            font-size: 1.8em;
+            font-size: 1.2em;
             color: #333;
-            margin: 15px auto;
+            margin: 10px auto;
             background-color: #e0e0e0;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             width: 90%;
             max-width: 400px;
             text-align: center;
         }
         .input-box {
-            padding: 10px;
+            padding: 8px;
             margin: 5px auto;
-            font-size: 1.2em;
+            font-size: 1em;
             width: 90%;
             max-width: 400px;
             text-align: center;
@@ -51,14 +50,14 @@
             flex-direction: column;
             align-items: center;
             margin-top: 20px;
-            gap: 10px;
+            gap: 8px;
         }
         button {
             width: 90%;
             max-width: 400px;
             margin: 5px auto;
-            padding: 12px;
-            font-size: 1.2em;
+            padding: 10px;
+            font-size: 1em;
             color: white;
             background-color: #2196F3;
             border: none;
@@ -68,12 +67,15 @@
         button:hover {
             background-color: #1976D2;
         }
+        .negative {
+            color: red;
+        }
     </style>
 </head>
 <body>
     <h1>Controle de Renda</h1>
     <input type="number" id="monthlyInput" class="input-box" placeholder="Insira um número">
-    <div id="monthlyValue"></div>
+    <div id="monthlyValue">Valor mensal: R$ 0.00</div>
     <div id="timer">Calculando...</div>
     <div id="gainCounter">Ganho acumulado: R$ 0.00</div>
 
@@ -104,48 +106,56 @@
         }
 
         let accumulatedGain = parseFloat(localStorage.getItem("accumulatedGain")) || 0;
-        const gainPerMinute = 3500 / (30 * 24 * 60);
+        let monthlyValue = parseFloat(localStorage.getItem("monthlyValue")) || 0;
 
         function updateGain(value) {
             accumulatedGain += value;
             localStorage.setItem("accumulatedGain", accumulatedGain);
-            document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+            const gainCounter = document.getElementById("gainCounter");
+            gainCounter.innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+            gainCounter.classList.toggle("negative", accumulatedGain < 0);
             updateMonthlyValue();
         }
 
         function accumulateGain() {
+            const gainPerMinute = 3500 / (30 * 24 * 60);
             updateGain(gainPerMinute);
         }
 
         function subtractValue() {
             const value = parseFloat(document.getElementById("subtractBox").value) || 0;
-            updateGain(value);
+            updateGain(-value);
             document.getElementById("subtractBox").value = "";
         }
 
         function addValue() {
             const value = parseFloat(document.getElementById("addBox").value) || 0;
-            updateGain(-value);
+            updateGain(value);
             document.getElementById("addBox").value = "";
         }
 
         function resetGain() {
             accumulatedGain = 0;
             localStorage.setItem("accumulatedGain", accumulatedGain);
-            document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
-            updateMonthlyValue();
+            updateGain(0);
         }
 
         function updateMonthlyValue() {
-            const value = parseFloat(document.getElementById("monthlyInput").value) || 0;
-            const adjustedValue = value - accumulatedGain;
-            document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${adjustedValue.toFixed(2)}`;
+            const inputValue = parseFloat(document.getElementById("monthlyInput").value) || 0;
+            monthlyValue = inputValue - accumulatedGain;
+            localStorage.setItem("monthlyValue", monthlyValue);
+            document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
         }
 
         document.getElementById("monthlyInput").addEventListener("input", updateMonthlyValue);
-        document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
         setInterval(updateCountdown, 1000);
         setInterval(accumulateGain, 60000);
+
+        window.onload = function() {
+            updateCountdown();
+            updateMonthlyValue();
+            updateGain(0);
+        };
     </script>
 </body>
 </html>
