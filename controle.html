@@ -16,7 +16,7 @@
             margin-bottom: 20px;
             color: #4CAF50;
         }
-        #timer, #gainCounter, #monthlyValue {
+        #timer, #gainCounter, #monthlyValue, #biweeklyValue {
             font-size: 1.2em;
             color: #333;
             margin: 10px auto;
@@ -38,12 +38,14 @@
             border-radius: 5px;
         }
         #subtractBox {
-            background-color: #f44336;
-            color: white;
+            background-color: #ffdddd;
+            border: 1px solid #f44336;
+            color: #f44336;
         }
         #addBox {
-            background-color: #4CAF50;
-            color: white;
+            background-color: #ddffdd;
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
         }
         .button-container {
             display: flex;
@@ -59,112 +61,93 @@
             padding: 10px;
             font-size: 1em;
             color: white;
-            background-color: #2196F3;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #1976D2;
+        .subtract-btn {
+            background-color: #f44336;
         }
-        .negative {
-            color: red;
+        .add-btn {
+            background-color: #4CAF50;
+        }
+        .reset-btn {
+            background-color: #2196F3;
         }
     </style>
 </head>
 <body>
     <h1>Controle de Renda</h1>
-    <input type="number" id="monthlyInput" class="input-box" placeholder="Insira um número">
+    <input type="number" id="monthlyInput" class="input-box" placeholder="Insira um número" oninput="setMonthlyValue()">
     <div id="monthlyValue">Valor mensal: R$ 0.00</div>
+    <div id="biweeklyValue">Valor quinzenal: R$ 0.00</div>
     <div id="timer">Calculando...</div>
     <div id="gainCounter">Ganho acumulado: R$ 0.00</div>
 
     <div class="button-container">
         <input type="number" id="subtractBox" class="input-box" placeholder="Valor a subtrair">
-        <button onclick="subtractValue()">Subtrair</button>
+        <button class="subtract-btn" onclick="updateValues(-parseFloat(document.getElementById('subtractBox').value) || 0)">Subtrair</button>
         <input type="number" id="addBox" class="input-box" placeholder="Valor a adicionar">
-        <button onclick="addValue()">Adicionar</button>
-        <button onclick="resetGain()">Resetar Ganho Acumulado</button>
+        <button class="add-btn" onclick="updateValues(parseFloat(document.getElementById('addBox').value) || 0)">Adicionar</button>
+        <button class="reset-btn" onclick="resetGain()">Resetar Ganho Acumulado</button>
     </div>
 
     <script>
-        function getLastDayOfMonth(year, month) {
-            return new Date(year, month + 1, 0);
-        }
-
-        function updateCountdown() {
-            const now = new Date();
-            const endOfMonth = getLastDayOfMonth(now.getFullYear(), now.getMonth());
-            const timeDiff = endOfMonth - now;
-
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-            document.getElementById("timer").innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-        }
-
+        let monthlyValue = parseFloat(localStorage.getItem("monthlyValue")) || 3500;
         let accumulatedGain = parseFloat(localStorage.getItem("accumulatedGain")) || 0;
-        let monthlyValue = parseFloat(localStorage.getItem("monthlyValue")) || 0;
 
-        function accumulateGain() {
-            const gainPerMinute = 3500 / (30 * 24 * 60);
-            updateGain(gainPerMinute);
+        function setMonthlyValue() {
+            monthlyValue = parseFloat(document.getElementById("monthlyInput").value) || 0;
+            localStorage.setItem("monthlyValue", monthlyValue);
+            updateDisplay();
         }
 
-        function updateGain(value) {
-            accumulatedGain += value;
+        function updateValues(amount) {
+            monthlyValue += amount;
+            accumulatedGain += amount;
+            localStorage.setItem("monthlyValue", monthlyValue);
             localStorage.setItem("accumulatedGain", accumulatedGain);
-            const gainCounter = document.getElementById("gainCounter");
-            gainCounter.innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
-            gainCounter.classList.toggle("negative", accumulatedGain < 0);
+            updateDisplay();
         }
-
-        function subtractValue() {
-    const value = parseFloat(document.getElementById("subtractBox").value) || 0;
-    accumulatedGain -= value;
-    monthlyValue -= value;
-    localStorage.setItem("accumulatedGain", accumulatedGain);
-    localStorage.setItem("monthlyValue", monthlyValue);
-    document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
-    document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
-    document.getElementById("subtractBox").value = "";
-}
-
-        function addValue() {
-    const value = parseFloat(document.getElementById("addBox").value) || 0;
-    accumulatedGain += value;
-    monthlyValue += value;
-    localStorage.setItem("accumulatedGain", accumulatedGain);
-    localStorage.setItem("monthlyValue", monthlyValue);
-    document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
-    document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
-    document.getElementById("addBox").value = "";
-}
 
         function resetGain() {
             accumulatedGain = 0;
             localStorage.setItem("accumulatedGain", accumulatedGain);
-            updateGain(0);
-            updateMonthlyValue();
+            updateDisplay();
         }
 
-        function updateMonthlyValue() {
-            const inputValue = parseFloat(document.getElementById("monthlyInput").value) || 0;
-            monthlyValue = inputValue;
+        function accumulateGain() {
+            const gainPerMinute = monthlyValue / (30 * 24 * 60);
+            accumulatedGain += gainPerMinute;
+            monthlyValue -= gainPerMinute;
+            localStorage.setItem("accumulatedGain", accumulatedGain);
             localStorage.setItem("monthlyValue", monthlyValue);
-            document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
+            updateDisplay();
         }
 
-        document.getElementById("monthlyInput").addEventListener("input", updateMonthlyValue);
+        function updateCountdown() {
+            const now = new Date();
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const timeDiff = lastDay - now;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+            document.getElementById("timer").innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        function updateDisplay() {
+            document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${monthlyValue.toFixed(2)}`;
+            document.getElementById("biweeklyValue").innerHTML = `Valor quinzenal: R$ ${(monthlyValue / 2).toFixed(2)}`;
+            document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+        }
+
         setInterval(updateCountdown, 1000);
         setInterval(accumulateGain, 60000);
 
         window.onload = function() {
+            updateDisplay();
             updateCountdown();
-            updateMonthlyValue();
-            updateGain(0);
         };
     </script>
 </body>
