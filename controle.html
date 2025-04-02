@@ -1,74 +1,150 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contador de Tempo e Ganhos</title>
+    <title>Controle de Renda</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 400px; margin: auto; }
-        #relogio, #contador { font-size: 2em; font-weight: bold; margin-top: 20px; }
-        input, button { margin: 10px; padding: 8px; width: 100%; }
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        #timer, #gainCounter, #monthlyValue {
+            font-size: 1.8em;
+            color: #333;
+            margin: 15px auto;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .input-box {
+            padding: 10px;
+            margin: 5px auto;
+            font-size: 1.2em;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #subtractBox {
+            background-color: #f44336;
+            color: white;
+        }
+        #addBox {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        button {
+            width: 90%;
+            max-width: 400px;
+            margin: 5px auto;
+            padding: 12px;
+            font-size: 1.2em;
+            color: white;
+            background-color: #2196F3;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Contador Regressivo e Ganhos</h2>
-        <h3>Tempo Restante para o Fim do Mês</h3>
-        <div id="relogio">00d 00h 00m 00s</div>
-        <h3>Ganho Acumulado</h3>
-        <div id="contador">R$ 0.00</div>
-        <input type="number" id="valor" placeholder="Digite um valor positivo ou negativo">
-        <button onclick="adicionarValor()">Adicionar ao Contador</button>
-        <button onclick="resetarContador()">Resetar Contador</button>
+    <h1>Controle de Renda</h1>
+    <input type="number" id="monthlyInput" class="input-box" placeholder="Insira um número">
+    <div id="monthlyValue"></div>
+    <div id="timer">Calculando...</div>
+    <div id="gainCounter">Ganho acumulado: R$ 0.00</div>
+
+    <div class="button-container">
+        <input type="number" id="subtractBox" class="input-box" placeholder="Valor a subtrair">
+        <button onclick="subtractValue()">Subtrair</button>
+        <input type="number" id="addBox" class="input-box" placeholder="Valor a adicionar">
+        <button onclick="addValue()">Adicionar</button>
+        <button onclick="resetGain()">Resetar Ganho Acumulado</button>
     </div>
-    
+
     <script>
-        function atualizarRelogio() {
-            const agora = new Date();
-            const ultimoDiaDoMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
-            const diferenca = ultimoDiaDoMes - agora;
-
-            const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
-            const horas = Math.floor((diferenca % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
-            const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
-
-            document.getElementById('relogio').innerText = `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+        function getLastDayOfMonth(year, month) {
+            return new Date(year, month + 1, 0);
         }
 
-        setInterval(atualizarRelogio, 1000);
-        atualizarRelogio();
+        function updateCountdown() {
+            const now = new Date();
+            const endOfMonth = getLastDayOfMonth(now.getFullYear(), now.getMonth());
+            const timeDiff = endOfMonth - now;
 
-        let rendaMensal = 3500;
-        let ganhoPorMinuto = rendaMensal / (30 * 24 * 60); // Divide por minutos do mês
-        let total = localStorage.getItem("total") ? parseFloat(localStorage.getItem("total")) : 0;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-        function atualizarContador() {
-            total += ganhoPorMinuto;
-            document.getElementById('contador').innerText = `R$ ${total.toFixed(2)}`;
-            localStorage.setItem("total", total);
+            document.getElementById("timer").innerText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
         }
 
-        function adicionarValor() {
-            let valor = parseFloat(document.getElementById('valor').value);
-            if (!isNaN(valor)) {
-                total += valor;
-                document.getElementById('contador').innerText = `R$ ${total.toFixed(2)}`;
-                localStorage.setItem("total", total);
-            } else {
-                alert("Digite um número válido.");
-            }
+        let accumulatedGain = parseFloat(localStorage.getItem("accumulatedGain")) || 0;
+        const gainPerMinute = 3500 / (30 * 24 * 60);
+
+        function updateGain(value) {
+            accumulatedGain += value;
+            localStorage.setItem("accumulatedGain", accumulatedGain);
+            document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+            updateMonthlyValue();
         }
 
-        function resetarContador() {
-            total = 0;
-            document.getElementById('contador').innerText = `R$ ${total.toFixed(2)}`;
-            localStorage.setItem("total", total);
+        function accumulateGain() {
+            updateGain(gainPerMinute);
         }
 
-        document.getElementById('contador').innerText = `R$ ${total.toFixed(2)}`;
-        setInterval(atualizarContador, 60000); // Atualiza a cada minuto
+        function subtractValue() {
+            const value = parseFloat(document.getElementById("subtractBox").value) || 0;
+            updateGain(value);
+            document.getElementById("subtractBox").value = "";
+        }
+
+        function addValue() {
+            const value = parseFloat(document.getElementById("addBox").value) || 0;
+            updateGain(-value);
+            document.getElementById("addBox").value = "";
+        }
+
+        function resetGain() {
+            accumulatedGain = 0;
+            localStorage.setItem("accumulatedGain", accumulatedGain);
+            document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+            updateMonthlyValue();
+        }
+
+        function updateMonthlyValue() {
+            const value = parseFloat(document.getElementById("monthlyInput").value) || 0;
+            const adjustedValue = value - accumulatedGain;
+            document.getElementById("monthlyValue").innerHTML = `Valor mensal: R$ ${adjustedValue.toFixed(2)}`;
+        }
+
+        document.getElementById("monthlyInput").addEventListener("input", updateMonthlyValue);
+        document.getElementById("gainCounter").innerHTML = `Ganho acumulado: R$ ${accumulatedGain.toFixed(2)}`;
+        setInterval(updateCountdown, 1000);
+        setInterval(accumulateGain, 60000);
     </script>
 </body>
 </html>
