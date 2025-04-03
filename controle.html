@@ -64,13 +64,13 @@
         .expense-btn { background-color: #f44336; }
         .reset-btn { background-color: #2196F3; }
         .expense-btn[onclick="subtractBenefitExpense()"] {
-          background-color: orange;
+            background-color: orange;
         }
         .negative {
-          color: red;
+            color: red;
         }
         .positive {
-          color: green;
+            color: green;
         }
         .input-row, .display-row {
             display: flex;
@@ -102,12 +102,21 @@
         .expense {
             color: red;
         }
+        #lockButton {
+            background-color: #888;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>Controle Gastos Ninja 3.0</h1>
     
     <div class="container">
+        <button id="lockButton" onclick="toggleLock()">🔒 Bloquear Edição</button>
         <div class="input-row">
             <input type="number" id="baseMonthlyInput" class="input-box" placeholder="Base Mensal" oninput="setBaseMonthlyValue()">
             <input type="number" id="benefitsInput" class="input-box" placeholder="Outros Benefícios" oninput="setBaseMonthlyValue()">
@@ -166,6 +175,7 @@
         let accumulatedBase = parseFloat(localStorage.getItem("accumulatedBase")) || 0;
         let accumulatedBenefits = parseFloat(localStorage.getItem("accumulatedBenefits")) || 0;
         let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+        let locked = false;
 
         function saveData() {
             localStorage.setItem("baseMonthlyValue", baseMonthlyValue);
@@ -180,6 +190,7 @@
         }
 
         function setBaseMonthlyValue() {
+            if (locked) return;
             baseMonthlyValue = parseFloat(document.getElementById("baseMonthlyInput").value) || 0;
             benefitsValue = parseFloat(document.getElementById("benefitsInput").value) || 1000;
             accumulatedBase = 0;
@@ -271,14 +282,14 @@
             document.getElementById("benefitsDailyDisplay").innerText = `Benefício Diário: R$ ${(benefitsValue / daysInMonth).toFixed(2)}`;
 
             if (accumulatedBase < 0) {
-              document.getElementById("availableFundsBase").classList.add('negative');
-              document.getElementById("availableFundsBase").classList.remove('positive');
+                document.getElementById("availableFundsBase").classList.add('negative');
+                document.getElementById("availableFundsBase").classList.remove('positive');
             } else if (accumulatedBase > 0){
-              document.getElementById("availableFundsBase").classList.add('positive');
-              document.getElementById("availableFundsBase").classList.remove('negative');
+                document.getElementById("availableFundsBase").classList.add('positive');
+                document.getElementById("availableFundsBase").classList.remove('negative');
             } else {
-              document.getElementById("availableFundsBase").classList.remove('negative');
-              document.getElementById("availableFundsBase").classList.remove('positive');
+                document.getElementById("availableFundsBase").classList.remove('negative');
+                document.getElementById("availableFundsBase").classList.remove('positive');
             }
         }
         
@@ -302,6 +313,18 @@
                 `;
                 tableBody.appendChild(row);
             });
+        }
+
+        function toggleLock() {
+            locked = !locked;
+            const lockButton = document.getElementById('lockButton');
+            if (locked) {
+                lockButton.innerText = '🔓 Desbloquear Edição';
+                lockButton.style.backgroundColor = '#4CAF50';
+            } else {
+                lockButton.innerText = '🔒 Bloquear Edição';
+                lockButton.style.backgroundColor = '#888';
+            }
         }
 
         window.onload = function() {
