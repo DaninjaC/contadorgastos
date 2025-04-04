@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Gastos Ninja 3.0</title>
+    <title>Controle Gastos Ninja 4.0</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,7 +34,7 @@
         .input-box {
             background-color: white;
         }
-        #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, #baseDailyDisplay, #benefitsDailyDisplay {
+        #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, #baseDailyDisplay, #benefitsDailyDisplay, #baseMinuteDisplay, #benefitsMinuteDisplay {
             background-color: #e1f5fe;
         }
         #benefitsExpenseInput {
@@ -137,6 +137,11 @@
             <div id="benefitsDailyDisplay" class="display-box"></div>
         </div>
 
+        <div class="display-row">
+            <div id="baseMinuteDisplay" class="display-box"></div>
+            <div id="benefitsMinuteDisplay" class="display-box"></div>
+        </div>
+
         <div class="input-row">
             <input type="number" id="expenseInput" class="input-box" placeholder="Valor do Gasto">
             <input type="number" id="revenueInput" class="input-box" placeholder="Valor do Ganho">
@@ -176,6 +181,8 @@
         let accumulatedBenefits = parseFloat(localStorage.getItem("accumulatedBenefits")) || 0;
         let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
         let locked = false;
+        let baseMinuteValue = 0;
+        let benefitsMinuteValue = 0;
 
         function saveData() {
             localStorage.setItem("baseMonthlyValue", baseMonthlyValue);
@@ -183,6 +190,13 @@
             localStorage.setItem("accumulatedBase", accumulatedBase);
             localStorage.setItem("accumulatedBenefits", accumulatedBenefits);
             localStorage.setItem("transactions", JSON.stringify(transactions));
+        }
+
+        function calculateMinuteValues() {
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            const minutesInMonth = daysInMonth * 24 * 60;
+            baseMinuteValue = baseMonthlyValue / minutesInMonth;
+            benefitsMinuteValue = benefitsValue / minutesInMonth;
         }
 
         function getIncrementPerMinute(value) {
@@ -195,6 +209,7 @@
             benefitsValue = parseFloat(document.getElementById("benefitsInput").value) || 1000;
             accumulatedBase = 0;
             accumulatedBenefits = 0;
+            calculateMinuteValues();
             saveData();
             updateDisplay();
         }
@@ -206,6 +221,7 @@
                 return;
             }
             accumulatedBenefits -= expense;
+            benefitsValue -= expense; // Subtrai o gasto dos benefícios
             saveData();
             updateDisplay();
         }
@@ -241,8 +257,9 @@
         }
 
         function accumulateAutoGain() {
-            let baseGain = getIncrementPerMinute(baseMonthlyValue);
-            let benefitsGain = getIncrementPerMinute(benefitsValue);
+            let baseGain = baseMinuteValue;
+            let benefitsGain = benefitsMinuteValue;
+
             accumulatedBase += baseGain;
             accumulatedBenefits += benefitsGain;
             baseMonthlyValue -= baseGain;
@@ -253,7 +270,7 @@
 
         function calculateTimeToSave() {
             let goal = parseFloat(document.getElementById("savingsGoalInput").value) || 0;
-            let gainPerMinute = getIncrementPerMinute(baseMonthlyValue);
+            let gainPerMinute = baseMinuteValue;
             let timeRequired = goal / gainPerMinute;
             let hours = Math.floor(timeRequired / 60);
             let minutes = Math.floor(timeRequired % 60);
@@ -266,6 +283,7 @@
             accumulatedBase = 0;
             accumulatedBenefits = 0;
             transactions = [];
+            calculateMinuteValues();
             saveData();
             updateDisplay();
             renderTransactionTable();
@@ -280,6 +298,8 @@
             let daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
             document.getElementById("baseDailyDisplay").innerText = `Base Mensal Diário: R$ ${(baseMonthlyValue / daysInMonth).toFixed(2)}`;
             document.getElementById("benefitsDailyDisplay").innerText = `Benefício Diário: R$ ${(benefitsValue / daysInMonth).toFixed(2)}`;
+            document.getElementById("baseMinuteDisplay").innerText = `Base por Minuto: R$ ${baseMinuteValue.toFixed(4)}`;
+            document.getElementById("benefitsMinuteDisplay").innerText = `Benefício por Minuto: R$ ${benefitsMinuteValue.toFixed(4)}`;
 
             if (accumulatedBase < 0) {
                 document.getElementById("availableFundsBase").classList.add('negative');
@@ -328,6 +348,7 @@
         }
 
         window.onload = function() {
+            calculateMinuteValues();
             updateDisplay();
             renderTransactionTable();
             setInterval(accumulateAutoGain, 60000);
