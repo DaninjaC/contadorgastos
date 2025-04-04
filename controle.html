@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Gastos Ninja 4.0</title>
+    <title>Controle Gastos Ninja 3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,13 +35,13 @@
         .input-box {
             background-color: white;
         }
-        #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, #baseDailyDisplay, #benefitsDailyDisplay, #baseMinuteDisplay, #benefitsMinuteDisplay {
+        #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, #baseDailyDisplay, #benefitsDailyDisplay, #baseMinuteDisplay, #benefitsMinuteDisplay, #savingsTimeDisplay {
             background-color: #e1f5fe;
         }
         #benefitsExpenseInput {
             background-color: #ffe0b2;
         }
-        #savingsGoalInput, #savingsTimeDisplay {
+        #savingsGoalInput {
             background-color: #e0e0e0;
         }
         #revenueInput {
@@ -110,6 +111,70 @@
             cursor: pointer;
             margin-bottom: 10px;
         }
+
+        /* Estilos para os gráficos */
+        .chart-container {
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: white;
+            position: relative; /* Para posicionar o botão de maximizar */
+        }
+        .chart-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block; /* Garante que o canvas se ajuste ao container */
+        }
+
+        .chart-container.minimized {
+            height: 50px; /* Altura mínima quando minimizado */
+            overflow: hidden;
+        }
+
+        .chart-container.minimized canvas {
+            display: none;
+        }
+
+        .chart-container button.maximize-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(255, 255, 255, 0.7); /* Fundo semi-transparente */
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            display: block; /* Mostrar o botão */
+            z-index: 10;
+        }
+
+        .chart-container.minimized button.maximize-btn {
+            display: block;
+        }
+
+        #goalProgress {
+            display: none;
+            width: 90%;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #e0e0e0;
+            text-align: center;
+        }
+
+        #goalProgress .progress-bar {
+            background-color: #4CAF50;
+            height: 10px;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +237,11 @@
             <tbody id="transactionTableBody">
             </tbody>
         </table>
+
+        <div class="chart-container" id="dailyBarChartContainer">
+            <canvas id="dailyBarChart"></canvas>
+            <button class="maximize-btn" onclick="toggleMaximizeChart('dailyBarChartContainer')">Maximizar</button>
+        </div>
     </div>
     
     <script>
@@ -183,6 +253,8 @@
         let locked = false;
         let baseMinuteValue = 0;
         let benefitsMinuteValue = 0;
+        let savingsGoal = 0;
+        let chartInstances = {}; // Para armazenar instâncias de gráficos
 
         function saveData() {
             localStorage.setItem("baseMonthlyValue", baseMonthlyValue);
@@ -190,6 +262,7 @@
             localStorage.setItem("accumulatedBase", accumulatedBase);
             localStorage.setItem("accumulatedBenefits", accumulatedBenefits);
             localStorage.setItem("transactions", JSON.stringify(transactions));
+             localStorage.setItem("savingsGoal", savingsGoal);
         }
 
         function calculateMinuteValues() {
@@ -212,6 +285,7 @@
             calculateMinuteValues();
             saveData();
             updateDisplay();
+            updateDailyBarChart();
         }
 
         function subtractBenefitExpense() {
@@ -221,9 +295,10 @@
                 return;
             }
             accumulatedBenefits -= expense;
-            benefitsValue -= expense; // Subtrai o gasto dos benefícios
+            benefitsValue -= expense;
             saveData();
             updateDisplay();
+            updateDailyBarChart();
         }
 
         function addTransaction(type) {
@@ -254,6 +329,7 @@
             updateDisplay();
             input.value = "";
             renderTransactionTable();
+            updateDailyBarChart();
         }
 
         function accumulateAutoGain() {
@@ -266,15 +342,17 @@
             benefitsValue -= benefitsGain;
             saveData();
             updateDisplay();
+            updateDailyBarChart();
         }
 
         function calculateTimeToSave() {
-            let goal = parseFloat(document.getElementById("savingsGoalInput").value) || 0;
+            savingsGoal = parseFloat(document.getElementById("savingsGoalInput").value) || 0;
             let gainPerMinute = baseMinuteValue;
-            let timeRequired = goal / gainPerMinute;
+            let timeRequired = savingsGoal / gainPerMinute;
             let hours = Math.floor(timeRequired / 60);
             let minutes = Math.floor(timeRequired % 60);
             document.getElementById("savingsTimeDisplay").innerText = `Tempo estimado para acumular: ${hours}h ${minutes}m`;
+            saveData();
         }
 
         function resetMonth() {
@@ -283,10 +361,12 @@
             accumulatedBase = 0;
             accumulatedBenefits = 0;
             transactions = [];
+            savingsGoal = 0;
             calculateMinuteValues();
             saveData();
             updateDisplay();
             renderTransactionTable();
+            updateDailyBarChart();
         }
 
         function updateDisplay() {
@@ -347,10 +427,107 @@
             }
         }
 
+        function toggleMaximizeChart(chartId) {
+            const chartContainer = document.getElementById(chartId);
+            chartContainer.classList.toggle('minimized');
+            const maximizeButton = chartContainer.querySelector('.maximize-btn');
+             if (chartContainer.classList.contains('minimized')) {
+                maximizeButton.innerText = 'Maximizar';
+            } else {
+                maximizeButton.innerText = 'Minimizar';
+            }
+            if (chartInstances[chartId]) {
+                chartInstances[chartId].resize();
+            }
+        }
+
+        function updateDailyBarChart() {
+            const ctx = document.getElementById('dailyBarChart').getContext('2d');
+        
+            // Função para gerar um array com os dias do mês
+            function getDiasDoMes() {
+                const data = new Date();
+                const ultimoDia = new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
+                const dias = [];
+                for (let i = 1; i <= ultimoDia; i++) {
+                    dias.push(i + ' do ' + data.toLocaleString('default', { month: 'long' }));
+                }
+                return dias;
+            }
+        
+            const diasDoMes = getDiasDoMes();
+            const ganhosDiarios = Array(diasDoMes.length).fill(0); // Inicializa array de ganhos diários
+            const gastosDiarios = Array(diasDoMes.length).fill(0); // Inicializa array de gastos diários
+        
+            // Supondo que você tenha um array 'transacoes' com seus dados
+            // Exemplo de transação: { data: '05/10/2024', tipo: 'Ganho', valor: 50 }
+            transactions.forEach(transaction => {
+                const dataTransacao = new Date(transaction.date);
+                const dia = dataTransacao.getDate();
+                const mes = dataTransacao.getMonth();
+                const ano = dataTransacao.getFullYear();
+                
+                // Verifica se a transação é do mês e ano atual
+                if (mes === new Date().getMonth() && ano === new Date().getFullYear()) {
+                    if (transaction.type === 'Ganho') {
+                        ganhosDiarios[dia - 1] += transaction.value;
+                    } else if (transaction.type === 'Gasto') {
+                        gastosDiarios[dia - 1] += transaction.value;
+                    }
+                }
+            });
+        
+            if (chartInstances['dailyBarChart']) {
+                chartInstances['dailyBarChart'].destroy();
+            }
+            chartInstances['dailyBarChart'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: diasDoMes,
+                    datasets: [{
+                        label: 'Ganhos',
+                        data: ganhosDiarios,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)', // Cor verde para ganhos
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Gastos',
+                        data: gastosDiarios,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)', // Cor vermelha para gastos
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: 'Ganhos e Gastos Diários do Mês',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true // Começa o eixo Y do zero
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+
         window.onload = function() {
             calculateMinuteValues();
             updateDisplay();
             renderTransactionTable();
+            updateDailyBarChart();
             setInterval(accumulateAutoGain, 60000);
         };
     </script>
