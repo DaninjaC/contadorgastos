@@ -1,535 +1,570 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Gastos Ninja 3.0</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        .display-box, .input-box, button {
-            font-size: 1em;
-            color: #333;
-            margin: 8px 0;
-            padding: 8px;
-            border-radius: 6px;
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-            border: 1px solid #ccc;
-        }
-        .input-box {
-            background-color: white;
-        }
-        #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, #baseDailyDisplay, #benefitsDailyDisplay, #baseMinuteDisplay, #benefitsMinuteDisplay, #savingsTimeDisplay {
-            background-color: #e1f5fe;
-        }
-        #benefitsExpenseInput {
-            background-color: #ffe0b2;
-        }
-        #savingsGoalInput {
-            background-color: #e0e0e0;
-        }
-        #revenueInput {
-            background-color: #c8e6c9;
-        }
-        #expenseInput {
-            background-color: #ffcdd2;
-        }
-        .button-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .expense-btn { background-color: #f44336; }
-        .reset-btn { background-color: #2196F3; }
-        .expense-btn[onclick="subtractBenefitExpense()"] {
-            background-color: orange;
-        }
-        .negative {
-            color: red;
-        }
-        .positive {
-            color: green;
-        }
-        .input-row, .display-row {
-            display: flex;
-            justify-content: space-between;
-            width: 90%;
-            max-width: 500px;
-            margin: 8px auto;
-        }
-        .input-row .input-box, .display-row .display-box {
-            width: 48%;
-        }
-        table {
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .gain {
-            color: green;
-        }
-        .expense {
-            color: red;
-        }
-        #lockButton {
-            background-color: #888;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        /* Estilos para os gráficos */
-        .chart-container {
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 10px;
-            background-color: white;
-            position: relative; /* Para posicionar o botão de maximizar */
-        }
-        .chart-container canvas {
-            width: 100%;
-            height: 100%;
-            display: block; /* Garante que o canvas se ajuste ao container */
-        }
-
-        .chart-container.minimized {
-            height: 50px; /* Altura mínima quando minimizado */
-            overflow: hidden;
-        }
-
-        .chart-container.minimized canvas {
-            display: none;
-        }
-
-        .chart-container button.maximize-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: rgba(255, 255, 255, 0.7); /* Fundo semi-transparente */
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            display: block; /* Mostrar o botão */
-            z-index: 10;
-        }
-
-        .chart-container.minimized button.maximize-btn {
-            display: block;
-        }
-
-        #goalProgress {
-            display: none;
-            width: 90%;
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #e0e0e0;
-            text-align: center;
-        }
-
-        #goalProgress .progress-bar {
-            background-color: #4CAF50;
-            height: 10px;
-            border-radius: 5px;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Gastos Ninja 4.0 com Firebase</title>
+  <!-- Inclua o Chart.js para os gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .display-box, .input-box, button {
+      font-size: 1em;
+      color: #333;
+      margin: 8px 0;
+      padding: 8px;
+      border-radius: 6px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+    .input-box {
+      background-color: white;
+    }
+    #baseMonthlyDisplay, #benefitsDisplay, #availableFundsBase, #availableFundsBenefits, 
+    #baseDailyDisplay, #benefitsDailyDisplay, #baseMinuteDisplay, #benefitsMinuteDisplay, 
+    #savingsTimeDisplay {
+      background-color: #e1f5fe;
+    }
+    #benefitsExpenseInput {
+      background-color: #ffe0b2;
+    }
+    #savingsGoalInput {
+      background-color: #e0e0e0;
+    }
+    #revenueInput {
+      background-color: #c8e6c9;
+    }
+    #expenseInput {
+      background-color: #ffcdd2;
+    }
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .expense-btn { background-color: #f44336; }
+    .reset-btn { background-color: #2196F3; }
+    .expense-btn[onclick="subtractBenefitExpense()"] {
+      background-color: orange;
+    }
+    .negative {
+      color: red;
+    }
+    .positive {
+      color: green;
+    }
+    .input-row, .display-row {
+      display: flex;
+      justify-content: space-between;
+      width: 90%;
+      max-width: 500px;
+      margin: 8px auto;
+    }
+    .input-row .input-box, .display-row .display-box {
+      width: 48%;
+    }
+    table {
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .gain {
+      color: green;
+    }
+    .expense {
+      color: red;
+    }
+    #lockButton {
+      background-color: #888;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .chart-container {
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background-color: white;
+      position: relative;
+    }
+    .chart-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .chart-container.minimized {
+      height: 50px;
+      overflow: hidden;
+    }
+    .chart-container.minimized canvas {
+      display: none;
+    }
+    .chart-container button.maximize-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: rgba(255, 255, 255, 0.7);
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      display: block;
+      z-index: 10;
+    }
+    .chart-container.minimized button.maximize-btn {
+      display: block;
+    }
+    #goalProgress {
+      display: none;
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #e0e0e0;
+      text-align: center;
+    }
+    #goalProgress .progress-bar {
+      background-color: #4CAF50;
+      height: 10px;
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+  </style>
 </head>
 <body>
-    <h1>Controle Gastos Ninja 3.0</h1>
-    
-    <div class="container">
-        <button id="lockButton" onclick="toggleLock()">🔒 Bloquear Edição</button>
-        <div class="input-row">
-            <input type="number" id="baseMonthlyInput" class="input-box" placeholder="Base Mensal" oninput="setBaseMonthlyValue()">
-            <input type="number" id="benefitsInput" class="input-box" placeholder="Outros Benefícios" oninput="setBaseMonthlyValue()">
-        </div>
-        
-        <div class="display-row">
-            <div id="baseMonthlyDisplay" class="display-box"></div>
-            <div id="benefitsDisplay" class="display-box"></div>
-        </div>
-        
-        <div class="display-row">
-            <div id="availableFundsBase" class="display-box"></div>
-            <div id="availableFundsBenefits" class="display-box"></div>
-        </div>
-
-        <div class="display-row">
-            <div id="baseDailyDisplay" class="display-box"></div>
-            <div id="benefitsDailyDisplay" class="display-box"></div>
-        </div>
-
-        <div class="display-row">
-            <div id="baseMinuteDisplay" class="display-box"></div>
-            <div id="benefitsMinuteDisplay" class="display-box"></div>
-        </div>
-
-        <div class="input-row">
-            <input type="number" id="expenseInput" class="input-box" placeholder="Valor do Gasto">
-            <input type="number" id="revenueInput" class="input-box" placeholder="Valor do Ganho">
-        </div>
-        <div class="input-row">
-            <button class="expense-btn" onclick="addTransaction('expense')">Adicionar Gasto</button>
-            <button class="revenue-btn" onclick="addTransaction('revenue')">Adicionar Ganho</button>
-        </div>
-
-        <input type="number" id="benefitsExpenseInput" class="input-box" placeholder="Gasto com Benefícios">
-        <button class="expense-btn" onclick="subtractBenefitExpense()">Adicionar Desconto Benefício</button>
-        
-        <input type="number" id="savingsGoalInput" class="input-box" placeholder="Valor que deseja acumular" oninput="calculateTimeToSave()">
-        <div id="savingsTimeDisplay" class="display-box"></div>
-        
-        <div class="button-container">
-            <button class="reset-btn" onclick="resetMonth()">Resetar (iniciar novo mês)</button>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Data/Hora</th>
-                    <th>Tipo</th>
-                    <th>Valor</th>
-                </tr>
-            </thead>
-            <tbody id="transactionTableBody">
-            </tbody>
-        </table>
-
-        <div class="chart-container" id="dailyBarChartContainer">
-            <canvas id="dailyBarChart"></canvas>
-            <button class="maximize-btn" onclick="toggleMaximizeChart('dailyBarChartContainer')">Maximizar</button>
-        </div>
+  <h1>Controle Gastos Ninja 4.0</h1>
+  <div class="container">
+    <button id="lockButton" onclick="toggleLock()">🔒 Bloquear Edição</button>
+    <div class="input-row">
+      <input type="number" id="baseMonthlyInput" class="input-box" placeholder="Base Mensal" oninput="setBaseMonthlyValue()">
+      <input type="number" id="benefitsInput" class="input-box" placeholder="Outros Benefícios" oninput="setBaseMonthlyValue()">
     </div>
-    
-    <script>
-        let baseMonthlyValue = parseFloat(localStorage.getItem("baseMonthlyValue")) || 3500;
-        let benefitsValue = parseFloat(localStorage.getItem("benefitsValue")) || 1000;
-        let accumulatedBase = parseFloat(localStorage.getItem("accumulatedBase")) || 0;
-        let accumulatedBenefits = parseFloat(localStorage.getItem("accumulatedBenefits")) || 0;
-        let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
-        let locked = false;
-        let baseMinuteValue = 0;
-        let benefitsMinuteValue = 0;
-        let savingsGoal = 0;
-        let chartInstances = {}; // Para armazenar instâncias de gráficos
+    <div class="display-row">
+      <div id="baseMonthlyDisplay" class="display-box"></div>
+      <div id="benefitsDisplay" class="display-box"></div>
+    </div>
+    <div class="display-row">
+      <div id="availableFundsBase" class="display-box"></div>
+      <div id="availableFundsBenefits" class="display-box"></div>
+    </div>
+    <div class="display-row">
+      <div id="baseDailyDisplay" class="display-box"></div>
+      <div id="benefitsDailyDisplay" class="display-box"></div>
+    </div>
+    <div class="display-row">
+      <div id="baseMinuteDisplay" class="display-box"></div>
+      <div id="benefitsMinuteDisplay" class="display-box"></div>
+    </div>
+    <div class="input-row">
+      <input type="number" id="expenseInput" class="input-box" placeholder="Valor do Gasto">
+      <input type="number" id="revenueInput" class="input-box" placeholder="Valor do Ganho">
+    </div>
+    <div class="input-row">
+      <button class="expense-btn" onclick="addTransaction('expense')">Adicionar Gasto</button>
+      <button class="revenue-btn" onclick="addTransaction('revenue')">Adicionar Ganho</button>
+    </div>
+    <input type="number" id="benefitsExpenseInput" class="input-box" placeholder="Gasto com Benefícios">
+    <button class="expense-btn" onclick="subtractBenefitExpense()">Adicionar Desconto Benefício</button>
+    <input type="number" id="savingsGoalInput" class="input-box" placeholder="Valor que deseja acumular" oninput="calculateTimeToSave()">
+    <div id="savingsTimeDisplay" class="display-box"></div>
+    <div class="button-container">
+      <button class="reset-btn" onclick="resetMonth()">Resetar (iniciar novo mês)</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Data/Hora</th>
+          <th>Tipo</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody id="transactionTableBody"></tbody>
+    </table>
+    <div class="chart-container" id="dailyBarChartContainer">
+      <canvas id="dailyBarChart"></canvas>
+      <button class="maximize-btn" onclick="toggleMaximizeChart('dailyBarChartContainer')">Maximizar</button>
+    </div>
+  </div>
 
-        function saveData() {
-            localStorage.setItem("baseMonthlyValue", baseMonthlyValue);
-            localStorage.setItem("benefitsValue", benefitsValue);
-            localStorage.setItem("accumulatedBase", accumulatedBase);
-            localStorage.setItem("accumulatedBenefits", accumulatedBenefits);
-            localStorage.setItem("transactions", JSON.stringify(transactions));
-             localStorage.setItem("savingsGoal", savingsGoal);
+  <!-- Script principal: utilizando módulos do Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
+    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDemovKWmcJqMRA8WeFhyfG3S8D3drge2g",
+      authDomain: "controlegastosninja.firebaseapp.com",
+      projectId: "controlegastosninja",
+      storageBucket: "controlegastosninja.firebasestorage.app",
+      messagingSenderId: "887005171704",
+      appId: "1:887005171704:web:e8436ab84f816479e4100d",
+      measurementId: "G-61HQQ1VFMX"
+    };
+
+    // Inicializa o Firebase, Analytics e o Realtime Database
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+
+    // Variáveis da aplicação
+    let baseMonthlyValue = parseFloat(localStorage.getItem("baseMonthlyValue")) || 3500;
+    let benefitsValue = parseFloat(localStorage.getItem("benefitsValue")) || 1000;
+    let accumulatedBase = parseFloat(localStorage.getItem("accumulatedBase")) || 0;
+    let accumulatedBenefits = parseFloat(localStorage.getItem("accumulatedBenefits")) || 0;
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+    let locked = false;
+    let baseMinuteValue = 0;
+    let benefitsMinuteValue = 0;
+    let savingsGoal = 0;
+    let chartInstances = {};
+
+    // Salva os dados no localStorage e envia alguns dados para o Firebase
+    function saveData() {
+      localStorage.setItem("baseMonthlyValue", baseMonthlyValue);
+      localStorage.setItem("benefitsValue", benefitsValue);
+      localStorage.setItem("accumulatedBase", accumulatedBase);
+      localStorage.setItem("accumulatedBenefits", accumulatedBenefits);
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+      localStorage.setItem("savingsGoal", savingsGoal);
+      set(ref(database, 'status'), {
+        baseMonthlyValue,
+        benefitsValue,
+        accumulatedBase,
+        accumulatedBenefits,
+        savingsGoal,
+        atualizadoEm: new Date().toLocaleString()
+      });
+    }
+
+    // Calcula os valores por minuto com base na quantidade de minutos do mês
+    function calculateMinuteValues() {
+      const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+      const minutesInMonth = daysInMonth * 24 * 60;
+      baseMinuteValue = baseMonthlyValue / minutesInMonth;
+      benefitsMinuteValue = benefitsValue / minutesInMonth;
+    }
+
+    // Atualiza os valores da base mensal e benefícios a partir dos inputs
+    function setBaseMonthlyValue() {
+      if (locked) return;
+      baseMonthlyValue = parseFloat(document.getElementById("baseMonthlyInput").value) || 0;
+      benefitsValue = parseFloat(document.getElementById("benefitsInput").value) || 1000;
+      accumulatedBase = 0;
+      accumulatedBenefits = 0;
+      calculateMinuteValues();
+      saveData();
+      updateDisplay();
+      updateDailyBarChart();
+    }
+
+    // Subtrai um valor de desconto dos benefícios
+    function subtractBenefitExpense() {
+      let expense = parseFloat(document.getElementById("benefitsExpenseInput").value) || 0;
+      if (expense > accumulatedBenefits) {
+        alert("Saldo insuficiente nos benefícios.");
+        return;
+      }
+      accumulatedBenefits -= expense;
+      benefitsValue -= expense;
+      saveData();
+      updateDisplay();
+      updateDailyBarChart();
+    }
+
+    // Adiciona uma transação (gasto ou ganho) utilizando data em formato ISO
+    function addTransaction(type) {
+      let inputId = (type === 'revenue') ? "revenueInput" : "expenseInput";
+      let input = document.getElementById(inputId);
+      let value = parseFloat(input.value) || 0;
+      if (value === 0) {
+        alert("Por favor, insira um valor válido.");
+        return;
+      }
+      if (type === 'expense') {
+        accumulatedBase -= value;
+        baseMonthlyValue -= value;
+      } else {
+        accumulatedBase += value;
+        baseMonthlyValue += value;
+      }
+      // Armazena a data no formato ISO para garantir a correta interpretação
+      const novaTransacao = {
+        date: new Date().toISOString(),
+        type: type === 'expense' ? 'Gasto' : 'Ganho',
+        value: value
+      };
+      transactions.push(novaTransacao);
+      const transRef = ref(database, 'transacoes');
+      const novaTransRef = push(transRef);
+      set(novaTransRef, novaTransacao);
+      saveData();
+      updateDisplay();
+      input.value = "";
+      renderTransactionTable();
+      updateDailyBarChart();
+    }
+
+    // Acumula automaticamente os ganhos a cada minuto
+    function accumulateAutoGain() {
+      let baseGain = baseMinuteValue;
+      let benefitsGain = benefitsMinuteValue;
+      accumulatedBase += baseGain;
+      accumulatedBenefits += benefitsGain;
+      baseMonthlyValue -= baseGain;
+      benefitsValue -= benefitsGain;
+      saveData();
+      updateDisplay();
+      updateDailyBarChart();
+    }
+
+    // Calcula o tempo necessário para atingir a meta de poupança
+    function calculateTimeToSave() {
+      savingsGoal = parseFloat(document.getElementById("savingsGoalInput").value) || 0;
+      let gainPerMinute = baseMinuteValue;
+      let timeRequired = savingsGoal / gainPerMinute;
+      let hours = Math.floor(timeRequired / 60);
+      let minutes = Math.floor(timeRequired % 60);
+      document.getElementById("savingsTimeDisplay").innerText = `Tempo estimado para acumular: ${hours}h ${minutes}m`;
+      saveData();
+    }
+
+    // Reseta os valores para um novo mês
+    function resetMonth() {
+      baseMonthlyValue = 3500;
+      benefitsValue = 1000;
+      accumulatedBase = 0;
+      accumulatedBenefits = 0;
+      transactions = [];
+      savingsGoal = 0;
+      calculateMinuteValues();
+      saveData();
+      updateDisplay();
+      renderTransactionTable();
+      updateDailyBarChart();
+    }
+
+    // Atualiza os elementos de exibição na interface
+    function updateDisplay() {
+      document.getElementById("baseMonthlyDisplay").innerText = `Base Mensal: R$ ${baseMonthlyValue.toFixed(2)}`;
+      document.getElementById("benefitsDisplay").innerText = `Benefícios: R$ ${benefitsValue.toFixed(2)}`;
+      document.getElementById("availableFundsBase").innerText = `Disponível Mensal: R$ ${accumulatedBase.toFixed(2)}`;
+      document.getElementById("availableFundsBenefits").innerText = `Disponível Benefício: R$ ${accumulatedBenefits.toFixed(2)}`;
+      let daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+      document.getElementById("baseDailyDisplay").innerText = `Base Mensal Diário: R$ ${(baseMonthlyValue / daysInMonth).toFixed(2)}`;
+      document.getElementById("benefitsDailyDisplay").innerText = `Benefício Diário: R$ ${(benefitsValue / daysInMonth).toFixed(2)}`;
+      document.getElementById("baseMinuteDisplay").innerText = `Base por Minuto: R$ ${baseMinuteValue.toFixed(4)}`;
+      document.getElementById("benefitsMinuteDisplay").innerText = `Benefício por Minuto: R$ ${benefitsMinuteValue.toFixed(4)}`;
+      if (accumulatedBase < 0) {
+        document.getElementById("availableFundsBase").classList.add('negative');
+        document.getElementById("availableFundsBase").classList.remove('positive');
+      } else if (accumulatedBase > 0) {
+        document.getElementById("availableFundsBase").classList.add('positive');
+        document.getElementById("availableFundsBase").classList.remove('negative');
+      } else {
+        document.getElementById("availableFundsBase").classList.remove('negative');
+        document.getElementById("availableFundsBase").classList.remove('positive');
+      }
+    }
+
+    // Renderiza a tabela de transações na interface
+    function renderTransactionTable() {
+      const tableBody = document.getElementById("transactionTableBody");
+      tableBody.innerHTML = '';
+      transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        let valueText = `R$ ${transaction.value.toFixed(2)}`;
+        let valueClass = 'gain';
+        if (transaction.type === 'Gasto') {
+          valueText = `-R$ ${transaction.value.toFixed(2)}`;
+          valueClass = 'expense';
         }
+        row.innerHTML = `
+          <td>${transaction.date}</td>
+          <td>${transaction.type}</td>
+          <td class="${valueClass}">${valueText}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
 
-        function calculateMinuteValues() {
-            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-            const minutesInMonth = daysInMonth * 24 * 60;
-            baseMinuteValue = baseMonthlyValue / minutesInMonth;
-            benefitsMinuteValue = benefitsValue / minutesInMonth;
+    // Alterna entre bloquear e desbloquear os inputs
+    function toggleLock() {
+      locked = !locked;
+      const lockButton = document.getElementById('lockButton');
+      if (locked) {
+        lockButton.innerText = '🔓 Desbloquear Edição';
+        lockButton.style.backgroundColor = '#4CAF50';
+      } else {
+        lockButton.innerText = '🔒 Bloquear Edição';
+        lockButton.style.backgroundColor = '#888';
+      }
+    }
+
+    // Alterna o estado maximizado/minimizado do gráfico
+    function toggleMaximizeChart(chartId) {
+      const chartContainer = document.getElementById(chartId);
+      const maximizeButton = chartContainer.querySelector('.maximize-btn');
+      const canvas = chartContainer.querySelector('canvas');
+      if (chartContainer.classList.contains('minimized')) {
+        chartContainer.classList.remove('minimized');
+        maximizeButton.innerText = 'Minimizar';
+        canvas.style.display = 'block';
+      } else {
+        chartContainer.classList.add('minimized');
+        maximizeButton.innerText = 'Maximizar';
+        canvas.style.display = 'none';
+      }
+      if (chartInstances[chartId]) {
+        chartInstances[chartId].resize();
+      }
+    }
+
+    // Atualiza o gráfico de barras diárias com Chart.js
+    function updateDailyBarChart() {
+      const ctx = document.getElementById('dailyBarChart').getContext('2d');
+      // Função auxiliar para obter os dias do mês atual
+      function getDiasDoMes() {
+        const data = new Date();
+        const ultimoDia = new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
+        const dias = [];
+        for (let i = 1; i <= ultimoDia; i++) {
+          dias.push(i + ' do ' + data.toLocaleString('default', { month: 'long' }));
         }
-
-        function getIncrementPerMinute(value) {
-            return value / (30 * 24 * 60);
+        return dias;
+      }
+      const diasDoMes = getDiasDoMes();
+      const ganhosDiarios = Array(diasDoMes.length).fill(0);
+      const gastosDiarios = Array(diasDoMes.length).fill(0);
+      // Para cada transação, atualiza os arrays de ganhos e gastos se a data for do mês atual
+      transactions.forEach(transaction => {
+        const dataTransacao = new Date(transaction.date);
+        const dia = dataTransacao.getDate();
+        const mes = dataTransacao.getMonth();
+        const ano = dataTransacao.getFullYear();
+        const hoje = new Date();
+        if (mes === hoje.getMonth() && ano === hoje.getFullYear()) {
+          if (transaction.type === 'Ganho') {
+            ganhosDiarios[dia - 1] += transaction.value;
+          } else if (transaction.type === 'Gasto') {
+            gastosDiarios[dia - 1] += transaction.value;
+          }
         }
-
-        function setBaseMonthlyValue() {
-            if (locked) return;
-            baseMonthlyValue = parseFloat(document.getElementById("baseMonthlyInput").value) || 0;
-            benefitsValue = parseFloat(document.getElementById("benefitsInput").value) || 1000;
-            accumulatedBase = 0;
-            accumulatedBenefits = 0;
-            calculateMinuteValues();
-            saveData();
-            updateDisplay();
-            updateDailyBarChart();
-        }
-
-        function subtractBenefitExpense() {
-            let expense = parseFloat(document.getElementById("benefitsExpenseInput").value) || 0;
-            if (expense > accumulatedBenefits) {
-                alert("Saldo insuficiente nos benefícios.");
-                return;
+      });
+      if (chartInstances['dailyBarChart']) {
+        chartInstances['dailyBarChart'].destroy();
+      }
+      chartInstances['dailyBarChart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: diasDoMes,
+          datasets: [
+            {
+              label: 'Ganhos',
+              data: ganhosDiarios,
+              backgroundColor: 'rgba(75, 192, 192, 0.7)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Gastos',
+              data: gastosDiarios,
+              backgroundColor: 'rgba(255, 99, 132, 0.7)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
             }
-            accumulatedBenefits -= expense;
-            benefitsValue -= expense;
-            saveData();
-            updateDisplay();
-            updateDailyBarChart();
-        }
-
-        function addTransaction(type) {
-            let inputId = (type === 'revenue') ? "revenueInput" : "expenseInput";
-            let input = document.getElementById(inputId);
-            let value = parseFloat(input.value) || 0;
-            
-            if (value === 0) {
-                alert("Por favor, insira um valor válido.");
-                return;
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Ganhos e Gastos Diários do Mês',
+              font: { size: 16 }
+            },
+            legend: {
+              position: 'bottom'
             }
-            
-            if (type === 'expense') {
-                accumulatedBase -= value;
-                baseMonthlyValue -= value;
-            } else {
-                accumulatedBase += value;
-                baseMonthlyValue += value;
+          },
+          scales: {
+            y: {
+              beginAtZero: true
             }
-            
-            transactions.push({
-                date: new Date().toLocaleString(),
-                type: type === 'expense' ? 'Gasto' : 'Ganho',
-                value: value
-            });
-            
-            saveData();
-            updateDisplay();
-            input.value = "";
-            renderTransactionTable();
-            updateDailyBarChart();
+          }
         }
+      });
+    }
 
-        function accumulateAutoGain() {
-            let baseGain = baseMinuteValue;
-            let benefitsGain = benefitsMinuteValue;
+    // Expondo funções para o escopo global para que os atributos HTML consigam chamá-las
+    window.setBaseMonthlyValue = setBaseMonthlyValue;
+    window.subtractBenefitExpense = subtractBenefitExpense;
+    window.addTransaction = addTransaction;
+    window.resetMonth = resetMonth;
+    window.toggleLock = toggleLock;
+    window.toggleMaximizeChart = toggleMaximizeChart;
+    window.calculateTimeToSave = calculateTimeToSave;
 
-            accumulatedBase += baseGain;
-            accumulatedBenefits += benefitsGain;
-            baseMonthlyValue -= baseGain;
-            benefitsValue -= benefitsGain;
-            saveData();
-            updateDisplay();
-            updateDailyBarChart();
+    // Inicialização ao carregar a página
+    window.onload = function() {
+      calculateMinuteValues();
+      updateDisplay();
+      renderTransactionTable();
+      updateDailyBarChart();
+      setInterval(accumulateAutoGain, 60000);
+      const transacoesRef = ref(database, 'transacoes');
+      onValue(transacoesRef, (snapshot) => {
+        const dados = snapshot.val();
+        if (dados) {
+          transactions = Object.values(dados);
+          renderTransactionTable();
+          updateDailyBarChart();
         }
-
-        function calculateTimeToSave() {
-            savingsGoal = parseFloat(document.getElementById("savingsGoalInput").value) || 0;
-            let gainPerMinute = baseMinuteValue;
-            let timeRequired = savingsGoal / gainPerMinute;
-            let hours = Math.floor(timeRequired / 60);
-            let minutes = Math.floor(timeRequired % 60);
-            document.getElementById("savingsTimeDisplay").innerText = `Tempo estimado para acumular: ${hours}h ${minutes}m`;
-            saveData();
-        }
-
-        function resetMonth() {
-            baseMonthlyValue = 3500;
-            benefitsValue = 1000;
-            accumulatedBase = 0;
-            accumulatedBenefits = 0;
-            transactions = [];
-            savingsGoal = 0;
-            calculateMinuteValues();
-            saveData();
-            updateDisplay();
-            renderTransactionTable();
-            updateDailyBarChart();
-        }
-
-        function updateDisplay() {
-            document.getElementById("baseMonthlyDisplay").innerText = `Base Mensal: R$ ${baseMonthlyValue.toFixed(2)}`;
-            document.getElementById("benefitsDisplay").innerText = `Benefícios: R$ ${benefitsValue.toFixed(2)}`;
-            document.getElementById("availableFundsBase").innerText = `Disponível Mensal: R$ ${accumulatedBase.toFixed(2)}`;
-            document.getElementById("availableFundsBenefits").innerText = `Disponível Benefício: R$ ${accumulatedBenefits.toFixed(2)}`;
-
-            let daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-            document.getElementById("baseDailyDisplay").innerText = `Base Mensal Diário: R$ ${(baseMonthlyValue / daysInMonth).toFixed(2)}`;
-            document.getElementById("benefitsDailyDisplay").innerText = `Benefício Diário: R$ ${(benefitsValue / daysInMonth).toFixed(2)}`;
-            document.getElementById("baseMinuteDisplay").innerText = `Base por Minuto: R$ ${baseMinuteValue.toFixed(4)}`;
-            document.getElementById("benefitsMinuteDisplay").innerText = `Benefício por Minuto: R$ ${benefitsMinuteValue.toFixed(4)}`;
-
-            if (accumulatedBase < 0) {
-                document.getElementById("availableFundsBase").classList.add('negative');
-                document.getElementById("availableFundsBase").classList.remove('positive');
-            } else if (accumulatedBase > 0){
-                document.getElementById("availableFundsBase").classList.add('positive');
-                document.getElementById("availableFundsBase").classList.remove('negative');
-            } else {
-                document.getElementById("availableFundsBase").classList.remove('negative');
-                document.getElementById("availableFundsBase").classList.remove('positive');
-            }
-        }
-        
-        function renderTransactionTable() {
-            const tableBody = document.getElementById("transactionTableBody");
-            tableBody.innerHTML = '';
-            transactions.forEach(transaction => {
-                const row = document.createElement('tr');
-                let valueText = `R$ ${transaction.value.toFixed(2)}`;
-                let valueClass = 'gain';
-                
-                if (transaction.type === 'Gasto') {
-                    valueText = `-R$ ${transaction.value.toFixed(2)}`;
-                    valueClass = 'expense';
-                }
-                
-                row.innerHTML = `
-                    <td>${transaction.date}</td>
-                    <td>${transaction.type}</td>
-                    <td class="${valueClass}">${valueText}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        function toggleLock() {
-            locked = !locked;
-            const lockButton = document.getElementById('lockButton');
-            if (locked) {
-                lockButton.innerText = '🔓 Desbloquear Edição';
-                lockButton.style.backgroundColor = '#4CAF50';
-            } else {
-                lockButton.innerText = '🔒 Bloquear Edição';
-                lockButton.style.backgroundColor = '#888';
-            }
-        }
-
-        function toggleMaximizeChart(chartId) {
-            const chartContainer = document.getElementById(chartId);
-            chartContainer.classList.toggle('minimized');
-            const maximizeButton = chartContainer.querySelector('.maximize-btn');
-             if (chartContainer.classList.contains('minimized')) {
-                maximizeButton.innerText = 'Maximizar';
-            } else {
-                maximizeButton.innerText = 'Minimizar';
-            }
-            if (chartInstances[chartId]) {
-                chartInstances[chartId].resize();
-            }
-        }
-
-        function updateDailyBarChart() {
-            const ctx = document.getElementById('dailyBarChart').getContext('2d');
-        
-            // Função para gerar um array com os dias do mês
-            function getDiasDoMes() {
-                const data = new Date();
-                const ultimoDia = new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
-                const dias = [];
-                for (let i = 1; i <= ultimoDia; i++) {
-                    dias.push(i + ' do ' + data.toLocaleString('default', { month: 'long' }));
-                }
-                return dias;
-            }
-        
-            const diasDoMes = getDiasDoMes();
-            const ganhosDiarios = Array(diasDoMes.length).fill(0); // Inicializa array de ganhos diários
-            const gastosDiarios = Array(diasDoMes.length).fill(0); // Inicializa array de gastos diários
-        
-            // Supondo que você tenha um array 'transacoes' com seus dados
-            // Exemplo de transação: { data: '05/10/2024', tipo: 'Ganho', valor: 50 }
-            transactions.forEach(transaction => {
-                const dataTransacao = new Date(transaction.date);
-                const dia = dataTransacao.getDate();
-                const mes = dataTransacao.getMonth();
-                const ano = dataTransacao.getFullYear();
-                
-                // Verifica se a transação é do mês e ano atual
-                if (mes === new Date().getMonth() && ano === new Date().getFullYear()) {
-                    if (transaction.type === 'Ganho') {
-                        ganhosDiarios[dia - 1] += transaction.value;
-                    } else if (transaction.type === 'Gasto') {
-                        gastosDiarios[dia - 1] += transaction.value;
-                    }
-                }
-            });
-        
-            if (chartInstances['dailyBarChart']) {
-                chartInstances['dailyBarChart'].destroy();
-            }
-            chartInstances['dailyBarChart'] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: diasDoMes,
-                    datasets: [{
-                        label: 'Ganhos',
-                        data: ganhosDiarios,
-                        backgroundColor: 'rgba(75, 192, 192, 0.7)', // Cor verde para ganhos
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'Gastos',
-                        data: gastosDiarios,
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)', // Cor vermelha para gastos
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    title: {
-                        display: true,
-                        text: 'Ganhos e Gastos Diários do Mês',
-                        font: {
-                            size: 16
-                        }
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true // Começa o eixo Y do zero
-                            }
-                        }]
-                    }
-                }
-            });
-        }
-
-
-        window.onload = function() {
-            calculateMinuteValues();
-            updateDisplay();
-            renderTransactionTable();
-            updateDailyBarChart();
-            setInterval(accumulateAutoGain, 60000);
-        };
-    </script>
+      });
+    };
+  </script>
 </body>
 </html>
